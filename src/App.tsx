@@ -16,6 +16,7 @@ import SettingsPage from "./pages/SettingsPage";
 import InventoryPage from "./pages/InventoryPage";
 import CashierPage from "./pages/CashierPage";
 import NotFound from "./pages/NotFound";
+import AdminLoginPage from "./pages/AdminLoginPage";
 import { AdminGuard } from "./components/AdminGuard";
 
 const queryClient = new QueryClient();
@@ -29,6 +30,8 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<LandingPage />} />
+            {/* Admin login — public, but verifies role */}
+            <Route path="/admin-login" element={<AdminLoginPage />} />
             {/* Cashier-facing route — no guard needed, has its own auth */}
             <Route path="/cashier" element={<CashierPage />} />
             {/* Admin-only routes — cashiers are redirected to /cashier */}

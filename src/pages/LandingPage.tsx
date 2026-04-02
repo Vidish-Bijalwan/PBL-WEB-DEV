@@ -25,7 +25,7 @@ const LandingPage = () => {
                 {/* Admin Card */}
                 <Card
                     className="group relative border-4 border-foreground shadow-none rounded-none cursor-pointer transition-all hover:-translate-y-2 hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] bg-background overflow-hidden animate-slide-in"
-                    onClick={() => navigate("/admin")}
+                    onClick={() => navigate("/admin-login")}
                 >
                     <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                         <ShieldCheck className="h-24 w-24" />

@@ -14,6 +14,12 @@ export function AdminGuard({ children }: { children: React.ReactNode }) {
 
     useEffect(() => {
         const check = async () => {
+            // Hardcoded admin bypass
+            if (localStorage.getItem("retailpulse_admin") === "true") {
+                setStatus("admin");
+                return;
+            }
+
             const { data: { session } } = await supabase.auth.getSession();
             if (!session) {
                 setStatus("unauthenticated");
@@ -44,7 +50,11 @@ export function AdminGuard({ children }: { children: React.ReactNode }) {
         );
     }
 
-    if (status === "unauthenticated" || status === "cashier") {
+    if (status === "unauthenticated") {
+        return <Navigate to="/admin-login" replace />;
+    }
+
+    if (status === "cashier") {
         return <Navigate to="/cashier" replace />;
     }
 
