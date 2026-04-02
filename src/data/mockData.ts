@@ -170,3 +170,29 @@ export const hourlyData = [
   { hour: "8PM", sales: 28400, transactions: 98 },
   { hour: "9PM", sales: 18200, transactions: 62 }
 ];
+
+export interface InventoryItem {
+  id: string;
+  name: string;
+  sku: string;
+  category: string;
+  currentStock: number;
+  reorderPoint: number;
+  maxStock: number;
+  turnoverRate: number;
+  status: "healthy" | "low" | "critical" | "overstock";
+  lastRestocked: string;
+}
+
+export const inventoryData: InventoryItem[] = [
+  { id: "1", name: "iPhone 15 Pro Max", sku: "APL-IP15PM", category: "Electronics", currentStock: 12, reorderPoint: 50, maxStock: 200, turnoverRate: 8.2, status: "critical", lastRestocked: "Jan 20, 2026" },
+  { id: "2", name: "Samsung Galaxy S24 Ultra", sku: "SAM-S24U", category: "Electronics", currentStock: 34, reorderPoint: 40, maxStock: 180, turnoverRate: 6.8, status: "low", lastRestocked: "Jan 22, 2026" },
+  { id: "3", name: "Nike Air Max 270", sku: "NKE-AM270", category: "Sports", currentStock: 156, reorderPoint: 60, maxStock: 300, turnoverRate: 12.4, status: "healthy", lastRestocked: "Jan 25, 2026" },
+  { id: "4", name: "Sony WH-1000XM5", sku: "SNY-WH5", category: "Electronics", currentStock: 28, reorderPoint: 30, maxStock: 120, turnoverRate: 5.4, status: "low", lastRestocked: "Jan 18, 2026" },
+  { id: "5", name: "Levi's 501 Original", sku: "LVI-501", category: "Apparel", currentStock: 245, reorderPoint: 80, maxStock: 400, turnoverRate: 9.8, status: "healthy", lastRestocked: "Jan 26, 2026" },
+  { id: "6", name: "Dyson V15 Detect", sku: "DYS-V15", category: "Home & Garden", currentStock: 8, reorderPoint: 15, maxStock: 60, turnoverRate: 4.2, status: "critical", lastRestocked: "Jan 15, 2026" },
+  { id: "7", name: "Apple Watch Series 9", sku: "APL-AWS9", category: "Electronics", currentStock: 67, reorderPoint: 40, maxStock: 150, turnoverRate: 7.1, status: "healthy", lastRestocked: "Jan 24, 2026" },
+  { id: "8", name: "Adidas Ultraboost 23", sku: "ADI-UB23", category: "Sports", currentStock: 189, reorderPoint: 50, maxStock: 250, turnoverRate: 10.2, status: "healthy", lastRestocked: "Jan 27, 2026" },
+  { id: "9", name: "La Mer Moisturizer", sku: "LMR-MOIST", category: "Beauty", currentStock: 320, reorderPoint: 40, maxStock: 200, turnoverRate: 3.1, status: "overstock", lastRestocked: "Jan 28, 2026" },
+  { id: "10", name: "KitchenAid Mixer", sku: "KAD-MXR", category: "Home & Garden", currentStock: 42, reorderPoint: 20, maxStock: 80, turnoverRate: 5.6, status: "healthy", lastRestocked: "Jan 21, 2026" },
+];

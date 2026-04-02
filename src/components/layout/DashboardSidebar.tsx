@@ -1,12 +1,14 @@
-import { 
-  LayoutDashboard, 
-  TrendingUp, 
-  Store, 
-  Package, 
-  Users, 
+import { useEffect, useState } from "react";
+import {
+  LayoutDashboard,
+  TrendingUp,
+  Store,
+  Package,
+  Users,
   Settings,
   BarChart3,
-  Clock
+  Clock,
+  Boxes
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import {
@@ -24,11 +26,12 @@ import {
 } from "@/components/ui/sidebar";
 
 const mainNavItems = [
-  { title: "Overview", url: "/", icon: LayoutDashboard },
+  { title: "Overview", url: "/admin", icon: LayoutDashboard },
   { title: "Sales Analytics", url: "/sales", icon: TrendingUp },
   { title: "Stores", url: "/stores", icon: Store },
   { title: "Products", url: "/products", icon: Package },
   { title: "Employees", url: "/employees", icon: Users },
+  { title: "Inventory", url: "/inventory", icon: Boxes },
 ];
 
 const secondaryNavItems = [
@@ -40,6 +43,24 @@ const secondaryNavItems = [
 export function DashboardSidebar() {
   const { state } = useSidebar();
   const isCollapsed = state === "collapsed";
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const formattedTime = currentTime.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }) + " • " + currentTime.toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
 
   return (
     <Sidebar className="border-r-2 border-foreground">
@@ -69,9 +90,9 @@ export function DashboardSidebar() {
               {mainNavItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    <NavLink 
-                      to={item.url} 
-                      end={item.url === "/"} 
+                    <NavLink
+                      to={item.url}
+                      end={item.url === "/"}
                       className="flex items-center gap-3 px-4 py-2 hover:bg-accent transition-colors"
                       activeClassName="bg-foreground text-background hover:bg-foreground"
                     >
@@ -96,7 +117,7 @@ export function DashboardSidebar() {
               {secondaryNavItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    <NavLink 
+                    <NavLink
                       to={item.url}
                       className="flex items-center gap-3 px-4 py-2 hover:bg-accent transition-colors"
                       activeClassName="bg-foreground text-background hover:bg-foreground"
@@ -118,7 +139,7 @@ export function DashboardSidebar() {
         {!isCollapsed && (
           <div className="text-xs text-muted-foreground">
             <p className="font-semibold">Last updated</p>
-            <p className="font-mono">Feb 1, 2026 • 10:42 AM</p>
+            <p className="font-mono">{formattedTime}</p>
           </div>
         )}
       </SidebarFooter>

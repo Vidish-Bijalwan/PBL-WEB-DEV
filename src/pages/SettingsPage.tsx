@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,11 +7,63 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { User, Bell, Shield, Palette, Database, Globe } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+
+interface SettingsState {
+  name: string;
+  email: string;
+  dailySummary: boolean;
+  targetAlerts: boolean;
+  anomalyDetection: boolean;
+  compactMode: boolean;
+  autoRefresh: boolean;
+}
+
+const defaultSettings: SettingsState = {
+  name: "Admin User",
+  email: "admin@retail.com",
+  dailySummary: true,
+  targetAlerts: true,
+  anomalyDetection: false,
+  compactMode: false,
+  autoRefresh: true,
+};
+
+function loadSettings(): SettingsState {
+  try {
+    const saved = localStorage.getItem("dashboard-settings");
+    if (saved) return { ...defaultSettings, ...JSON.parse(saved) };
+  } catch (_e) { /* ignored */ }
+  return defaultSettings;
+}
 
 const SettingsPage = () => {
+  const [settings, setSettings] = useState<SettingsState>(loadSettings);
+  const { toast } = useToast();
+
+  const updateSetting = <K extends keyof SettingsState>(key: K, value: SettingsState[K]) => {
+    setSettings(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleSave = () => {
+    localStorage.setItem("dashboard-settings", JSON.stringify(settings));
+    toast({
+      title: "Settings Saved",
+      description: "Your preferences have been updated successfully.",
+    });
+  };
+
+  const handleCancel = () => {
+    setSettings(loadSettings());
+    toast({
+      title: "Changes Discarded",
+      description: "Settings have been reset to last saved values.",
+    });
+  };
+
   return (
-    <DashboardLayout 
-      title="Settings" 
+    <DashboardLayout
+      title="Settings"
       subtitle="Configure your dashboard preferences"
     >
       <div className="max-w-4xl space-y-6">
@@ -26,11 +79,22 @@ const SettingsPage = () => {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="name" className="font-semibold">Name</Label>
-                <Input id="name" defaultValue="Admin User" className="border-2 border-foreground" />
+                <Input
+                  id="name"
+                  value={settings.name}
+                  onChange={(e) => updateSetting("name", e.target.value)}
+                  className="border-2 border-foreground"
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email" className="font-semibold">Email</Label>
-                <Input id="email" type="email" defaultValue="admin@retail.com" className="border-2 border-foreground" />
+                <Input
+                  id="email"
+                  type="email"
+                  value={settings.email}
+                  onChange={(e) => updateSetting("email", e.target.value)}
+                  className="border-2 border-foreground"
+                />
               </div>
             </div>
             <div className="space-y-2">
@@ -54,7 +118,10 @@ const SettingsPage = () => {
                 <p className="font-semibold">Daily Summary</p>
                 <p className="text-sm text-muted-foreground">Receive daily sales summary via email</p>
               </div>
-              <Switch defaultChecked />
+              <Switch
+                checked={settings.dailySummary}
+                onCheckedChange={(v) => updateSetting("dailySummary", v)}
+              />
             </div>
             <Separator className="bg-foreground" />
             <div className="flex items-center justify-between">
@@ -62,7 +129,10 @@ const SettingsPage = () => {
                 <p className="font-semibold">Target Alerts</p>
                 <p className="text-sm text-muted-foreground">Get notified when stores hit targets</p>
               </div>
-              <Switch defaultChecked />
+              <Switch
+                checked={settings.targetAlerts}
+                onCheckedChange={(v) => updateSetting("targetAlerts", v)}
+              />
             </div>
             <Separator className="bg-foreground" />
             <div className="flex items-center justify-between">
@@ -70,7 +140,10 @@ const SettingsPage = () => {
                 <p className="font-semibold">Anomaly Detection</p>
                 <p className="text-sm text-muted-foreground">Alert on unusual sales patterns</p>
               </div>
-              <Switch />
+              <Switch
+                checked={settings.anomalyDetection}
+                onCheckedChange={(v) => updateSetting("anomalyDetection", v)}
+              />
             </div>
           </CardContent>
         </Card>
@@ -89,7 +162,10 @@ const SettingsPage = () => {
                 <p className="font-semibold">Compact Mode</p>
                 <p className="text-sm text-muted-foreground">Use condensed layout for tables</p>
               </div>
-              <Switch />
+              <Switch
+                checked={settings.compactMode}
+                onCheckedChange={(v) => updateSetting("compactMode", v)}
+              />
             </div>
             <Separator className="bg-foreground" />
             <div className="flex items-center justify-between">
@@ -97,7 +173,10 @@ const SettingsPage = () => {
                 <p className="font-semibold">Auto-refresh</p>
                 <p className="text-sm text-muted-foreground">Automatically refresh data every 5 minutes</p>
               </div>
-              <Switch defaultChecked />
+              <Switch
+                checked={settings.autoRefresh}
+                onCheckedChange={(v) => updateSetting("autoRefresh", v)}
+              />
             </div>
           </CardContent>
         </Card>
@@ -134,10 +213,10 @@ const SettingsPage = () => {
         </Card>
 
         <div className="flex justify-end gap-3">
-          <Button variant="outline" className="border-2 border-foreground font-semibold">
+          <Button variant="outline" className="border-2 border-foreground font-semibold" onClick={handleCancel}>
             Cancel
           </Button>
-          <Button className="font-semibold">
+          <Button className="font-semibold" onClick={handleSave}>
             Save Changes
           </Button>
         </div>

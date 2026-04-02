@@ -1,140 +1,95 @@
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { employeePerformance } from "@/data/mockData";
-import { Users, DollarSign, Star, TrendingUp } from "lucide-react";
+import { useSupabaseTable } from "@/hooks/useSupabaseTable";
+import { Users, UserCheck, Star, Award, Loader2 } from "lucide-react";
+
+interface EmployeeProfile {
+  id: string;
+  name: string;
+  role: string;
+  store_id: string;
+}
 
 const EmployeesPage = () => {
-  const totalSales = employeePerformance.reduce((sum, e) => sum + e.salesAmount, 0);
-  const avgRating = employeePerformance.reduce((sum, e) => sum + e.rating, 0) / employeePerformance.length;
+  const { data: employees, loading } = useSupabaseTable<EmployeeProfile>('profiles');
+
+  if (loading) {
+    return (
+      <div className="h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
 
   return (
-    <DashboardLayout 
-      title="Employee Performance" 
-      subtitle="Sales team metrics and rankings"
+    <DashboardLayout
+      title="Employee Performance"
+      subtitle="Track your team's sales performance and rankings"
     >
       <div className="space-y-6">
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card className="border-2 border-foreground shadow-sm">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-foreground">
-                  <Users className="h-6 w-6 text-background" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground uppercase font-medium">Team Size</p>
-                  <p className="text-3xl font-bold">{employeePerformance.length}</p>
-                </div>
+            <CardContent className="p-6 flex items-center gap-4">
+              <div className="p-3 bg-foreground text-background">
+                <Users className="h-6 w-6" />
               </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-2 border-foreground shadow-sm">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-foreground">
-                  <DollarSign className="h-6 w-6 text-background" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground uppercase font-medium">Team Sales</p>
-                  <p className="text-3xl font-bold">${(totalSales / 1000).toFixed(0)}K</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-2 border-foreground shadow-sm">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-foreground">
-                  <Star className="h-6 w-6 text-background" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground uppercase font-medium">Avg Rating</p>
-                  <p className="text-3xl font-bold">{avgRating.toFixed(1)}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-2 border-foreground shadow-sm">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-foreground">
-                  <TrendingUp className="h-6 w-6 text-background" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground uppercase font-medium">Avg Ticket</p>
-                  <p className="text-3xl font-bold">${(totalSales / employeePerformance.reduce((sum, e) => sum + e.transactions, 0)).toFixed(0)}</p>
-                </div>
+              <div>
+                <p className="text-sm font-bold uppercase text-muted-foreground">Team Size</p>
+                <p className="text-2xl font-black">{employees.length}</p>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Employees Table */}
-        <Card className="border-2 border-foreground shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-lg font-bold uppercase tracking-wide">
-              Sales Team Leaderboard
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow className="border-foreground">
-                  <TableHead className="font-bold uppercase text-xs w-12">#</TableHead>
-                  <TableHead className="font-bold uppercase text-xs">Employee</TableHead>
-                  <TableHead className="font-bold uppercase text-xs">Store</TableHead>
-                  <TableHead className="font-bold uppercase text-xs">Role</TableHead>
-                  <TableHead className="font-bold uppercase text-xs text-right">Sales</TableHead>
-                  <TableHead className="font-bold uppercase text-xs text-right">Transactions</TableHead>
-                  <TableHead className="font-bold uppercase text-xs text-right">Avg Ticket</TableHead>
-                  <TableHead className="font-bold uppercase text-xs text-right">Rating</TableHead>
+        <Card className="border-2 border-foreground shadow-sm overflow-hidden">
+          <Table>
+            <TableHeader className="bg-muted/50 border-b-2 border-foreground">
+              <TableRow className="border-none">
+                <TableHead className="font-bold uppercase text-xs text-foreground">Employee Name</TableHead>
+                <TableHead className="font-bold uppercase text-xs text-foreground text-center">Role</TableHead>
+                <TableHead className="font-bold uppercase text-xs text-foreground text-center">Status</TableHead>
+                <TableHead className="font-bold uppercase text-xs text-foreground text-right">Rating</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {employees.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center py-12 text-muted-foreground font-bold uppercase text-xs">
+                    No employees registered in the system.
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {employeePerformance.map((employee, index) => (
-                  <TableRow key={employee.id} className="border-foreground/20">
+              ) : (
+                employees.map((emp) => (
+                  <TableRow key={emp.id} className="border-b border-foreground/10 hover:bg-muted/30 transition-colors">
                     <TableCell>
-                      <div className={`h-8 w-8 flex items-center justify-center font-bold ${
-                        index === 0 ? "bg-chart-4 text-foreground" :
-                        index === 1 ? "bg-muted text-foreground" :
-                        index === 2 ? "bg-chart-1 text-background" :
-                        "bg-muted/50"
-                      }`}>
-                        {index + 1}
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 flex items-center justify-center bg-muted/50 border-2 border-foreground rounded-full font-bold">
+                          {emp.name.substring(0, 1)}
+                        </div>
+                        <span className="font-bold">{emp.name}</span>
                       </div>
                     </TableCell>
-                    <TableCell className="font-semibold">{employee.name}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="font-medium border-foreground">
-                        {employee.store}
+                    <TableCell className="text-center">
+                      <Badge variant="outline" className="text-[10px] font-bold border-foreground uppercase">
+                        {emp.role}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-muted-foreground">{employee.role}</TableCell>
-                    <TableCell className="text-right font-mono font-semibold">
-                      ${employee.salesAmount.toLocaleString()}
-                    </TableCell>
-                    <TableCell className="text-right font-mono">
-                      {employee.transactions}
-                    </TableCell>
-                    <TableCell className="text-right font-mono">
-                      ${employee.avgTicket.toFixed(2)}
+                    <TableCell className="text-center text-emerald-500 font-bold uppercase text-[9px]">
+                      Online
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <Star className="h-4 w-4 fill-chart-4 text-chart-4" />
-                        <span className="font-semibold">{employee.rating}</span>
+                      <div className="flex items-center justify-end gap-1 text-amber-500">
+                        <Star className="h-3 w-3 fill-current" />
+                        <span className="font-bold text-xs">4.8</span>
                       </div>
                     </TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
+                ))
+              )}
+            </TableBody>
+          </Table>
         </Card>
       </div>
     </DashboardLayout>

@@ -1,8 +1,12 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { DateRangePicker } from "@/components/dashboard/DateRangePicker";
-import { Bell, Download, RefreshCw, Search } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { SearchDialog } from "@/components/dashboard/SearchDialog";
+import { NotificationDropdown } from "@/components/dashboard/NotificationDropdown";
+import { Download, RefreshCw, Search, Moon, Sun } from "lucide-react";
+import { useTheme } from "next-themes";
+import { useExport } from "@/hooks/useExport";
 
 interface DashboardHeaderProps {
   title: string;
@@ -10,6 +14,10 @@ interface DashboardHeaderProps {
 }
 
 export function DashboardHeader({ title, subtitle }: DashboardHeaderProps) {
+  const [searchOpen, setSearchOpen] = useState(false);
+  const { theme, setTheme } = useTheme();
+  const { exportData } = useExport();
+
   return (
     <header className="border-b-2 border-foreground bg-background sticky top-0 z-10">
       <div className="flex items-center justify-between px-6 py-4">
@@ -25,32 +33,49 @@ export function DashboardHeader({ title, subtitle }: DashboardHeaderProps) {
 
         <div className="flex items-center gap-3">
           <DateRangePicker />
-          
-          <div className="relative hidden md:block">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input 
-              placeholder="Search..." 
-              className="pl-10 w-64 border-2 border-foreground" 
-            />
-          </div>
 
-          <Button 
-            variant="outline" 
-            size="icon" 
+          <Button
+            variant="outline"
+            className="border-2 border-foreground font-semibold hover:bg-accent hidden md:flex"
+            onClick={() => setSearchOpen(true)}
+          >
+            <Search className="mr-2 h-4 w-4" />
+            Search...
+            <kbd className="ml-4 pointer-events-none hidden sm:inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+              <span className="text-xs">⌘</span>K
+            </kbd>
+          </Button>
+
+          <SearchDialog open={searchOpen} onOpenChange={setSearchOpen} />
+
+          <Button
+            variant="outline"
+            size="icon"
             className="border-2 border-foreground hover:bg-accent"
+            onClick={() => window.location.reload()}
           >
             <RefreshCw className="h-4 w-4" />
           </Button>
-          
-          <Button 
-            variant="outline" 
-            size="icon" 
+
+          <Button
+            variant="outline"
+            size="icon"
             className="border-2 border-foreground hover:bg-accent"
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
           >
-            <Bell className="h-4 w-4" />
+            {theme === "dark" ? (
+              <Sun className="h-4 w-4" />
+            ) : (
+              <Moon className="h-4 w-4" />
+            )}
           </Button>
 
-          <Button className="border-2 border-foreground font-semibold">
+          <NotificationDropdown />
+
+          <Button
+            className="border-2 border-foreground font-semibold"
+            onClick={() => exportData("dashboard")}
+          >
             <Download className="mr-2 h-4 w-4" />
             Export
           </Button>

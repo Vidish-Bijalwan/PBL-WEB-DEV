@@ -2,141 +2,158 @@ import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Activity, DollarSign, ShoppingCart, Users, Clock, Zap } from "lucide-react";
+import { supabase } from "@/lib/supabaseClient";
+import { Activity, DollarSign, ShoppingCart, Users, Clock, Zap, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-interface LiveMetric {
-  label: string;
-  value: string;
-  trend: "up" | "down" | "neutral";
-  icon: React.ElementType;
+interface Transaction {
+  id: string;
+  product_name: string;
+  amount: number;
+  created_at: string;
+  isNew?: boolean;
 }
 
 const RealtimePage = () => {
-  const [currentTime, setCurrentTime] = useState(new Date());
-  const [salesCount, setSalesCount] = useState(142);
-  const [revenue, setRevenue] = useState(8472);
-  const [activeCustomers, setActiveCustomers] = useState(23);
+  const [revenue, setRevenue] = useState(0);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeCustomers, setActiveCustomers] = useState(12);
+
+  const fetchInitialData = async () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const { data, error } = await supabase
+      .from('transactions')
+      .select('*')
+      .gte('created_at', today.toISOString())
+      .order('created_at', { ascending: false });
+
+    if (!error && data) {
+      setTransactions(data);
+      const total = data.reduce((acc, t) => acc + Number(t.amount), 0);
+      setRevenue(total);
+    }
+    setLoading(false);
+  };
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-      // Simulate live data updates
-      if (Math.random() > 0.7) {
-        setSalesCount(prev => prev + Math.floor(Math.random() * 3));
-        setRevenue(prev => prev + Math.floor(Math.random() * 150));
-      }
-      if (Math.random() > 0.5) {
-        setActiveCustomers(prev => Math.max(10, prev + (Math.random() > 0.5 ? 1 : -1)));
-      }
-    }, 2000);
+    fetchInitialData();
 
-    return () => clearInterval(timer);
+    const channel = supabase
+      .channel('realtime-monitor')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'transactions' },
+        (payload) => {
+          const newTxn = { ...payload.new, isNew: true } as Transaction;
+          setTransactions(prev => [newTxn, ...prev].slice(0, 10));
+          setRevenue(prev => prev + Number(payload.new.amount));
+
+          // Flash animation for metrics
+          setActiveCustomers(prev => prev + 1);
+          setTimeout(() => setActiveCustomers(prev => Math.max(12, prev - 1)), 5000);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
-  const liveMetrics: LiveMetric[] = [
-    { label: "Today's Revenue", value: `$${revenue.toLocaleString()}`, trend: "up", icon: DollarSign },
-    { label: "Transactions Today", value: salesCount.toString(), trend: "up", icon: ShoppingCart },
-    { label: "Active Customers", value: activeCustomers.toString(), trend: "neutral", icon: Users },
-    { label: "Avg Response Time", value: "1.2s", trend: "down", icon: Zap }
-  ];
-
-  const recentTransactions = [
-    { id: "TXN-8842", store: "Manhattan", amount: 245.99, time: "2 min ago" },
-    { id: "TXN-8841", store: "Beverly Hills", amount: 89.50, time: "4 min ago" },
-    { id: "TXN-8840", store: "Chicago", amount: 156.00, time: "5 min ago" },
-    { id: "TXN-8839", store: "Seattle", amount: 312.75, time: "7 min ago" },
-    { id: "TXN-8838", store: "Miami", amount: 67.25, time: "8 min ago" },
-    { id: "TXN-8837", store: "Boston", amount: 198.00, time: "10 min ago" }
-  ];
+  if (loading) {
+    return <div className="h-screen flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+  }
 
   return (
-    <DashboardLayout 
-      title="Real-time Monitor" 
-      subtitle="Live sales and activity tracking"
-    >
+    <DashboardLayout title="Real-time Monitor" subtitle="Live sales and activity tracking">
       <div className="space-y-6">
-        {/* Live Status */}
         <Card className="border-2 border-foreground shadow-sm bg-foreground text-background">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="h-3 w-3 bg-chart-2 rounded-full animate-pulse" />
-                <span className="font-bold text-lg">LIVE</span>
-                <span className="text-background/70">|</span>
+                <div className="h-3 w-3 bg-emerald-500 rounded-full animate-pulse" />
+                <span className="font-bold text-lg">LIVE MONITORING</span>
+                <span className="text-background/50">|</span>
                 <Clock className="h-4 w-4" />
-                <span className="font-mono">
-                  {currentTime.toLocaleTimeString()}
-                </span>
+                <span className="font-mono">{new Date().toLocaleTimeString()}</span>
               </div>
-              <Badge variant="outline" className="border-background text-background font-semibold">
-                All Systems Operational
+              <Badge variant="outline" className="border-background text-background font-bold uppercase text-[10px]">
+                System Healthy • 2ms Latency
               </Badge>
             </div>
           </CardContent>
         </Card>
 
-        {/* Live Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {liveMetrics.map((metric, index) => (
-            <Card key={index} className="border-2 border-foreground shadow-sm">
-              <CardContent className="p-6">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-foreground">
-                    <metric.icon className="h-6 w-6 text-background" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground uppercase font-medium">{metric.label}</p>
-                    <p className="text-2xl font-bold">{metric.value}</p>
-                  </div>
-                </div>
-                <div className={cn(
-                  "mt-2 h-1 w-full",
-                  metric.trend === "up" ? "bg-chart-2" :
-                  metric.trend === "down" ? "bg-destructive" :
-                  "bg-muted"
-                )} />
-              </CardContent>
-            </Card>
-          ))}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card className="border-2 border-foreground shadow-sm">
+            <CardContent className="p-6 flex items-center gap-4">
+              <div className="p-3 bg-foreground text-background"><DollarSign className="h-6 w-6" /></div>
+              <div>
+                <p className="text-xs font-bold uppercase text-muted-foreground">Today's Revenue</p>
+                <p className="text-2xl font-black italic">₹{revenue.toLocaleString()}</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-2 border-foreground shadow-sm">
+            <CardContent className="p-6 flex items-center gap-4">
+              <div className="p-3 bg-foreground text-background"><ShoppingCart className="h-6 w-6" /></div>
+              <div>
+                <p className="text-xs font-bold uppercase text-muted-foreground">Transactions</p>
+                <p className="text-2xl font-black italic">{transactions.length}</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-2 border-foreground shadow-sm">
+            <CardContent className="p-6 flex items-center gap-4">
+              <div className="p-3 bg-foreground text-background"><Users className="h-6 w-6" /></div>
+              <div>
+                <p className="text-xs font-bold uppercase text-muted-foreground">Active Customers</p>
+                <p className="text-2xl font-black italic">{activeCustomers}</p>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Recent Transactions */}
-        <Card className="border-2 border-foreground shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-lg font-bold uppercase tracking-wide flex items-center gap-2">
-              <Activity className="h-5 w-5" />
-              Recent Transactions
+        <Card className="border-2 border-foreground shadow-sm overlow-hidden">
+          <CardHeader className="bg-muted/30 border-b-2 border-foreground">
+            <CardTitle className="text-sm font-black uppercase italic tracking-widest flex items-center gap-2">
+              <Activity className="h-4 w-4" /> Recent Activity Feed
             </CardTitle>
-            <Badge variant="outline" className="border-foreground font-mono">
-              Auto-refresh: 2s
-            </Badge>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {recentTransactions.map((txn) => (
-                <div 
-                  key={txn.id} 
-                  className="flex items-center justify-between p-4 border-2 border-foreground hover:bg-accent transition-colors"
+          <div className="divide-y divide-foreground/10">
+            {transactions.length === 0 ? (
+              <div className="p-12 text-center text-muted-foreground uppercase font-bold text-xs italic">
+                Waiting for incoming transactions...
+              </div>
+            ) : (
+              transactions.map((txn) => (
+                <div
+                  key={txn.id}
+                  className={cn(
+                    "flex items-center justify-between p-4 transition-all duration-500",
+                    txn.isNew && "bg-emerald-500/10 animate-slide-in"
+                  )}
                 >
                   <div className="flex items-center gap-4">
-                    <span className="font-mono font-bold">{txn.id}</span>
-                    <Badge variant="outline" className="border-foreground">
-                      {txn.store}
-                    </Badge>
+                    <div className="h-8 w-8 flex items-center justify-center bg-foreground text-background font-black text-[10px] rounded-none">
+                      {txn.id.substring(0, 2).toUpperCase()}
+                    </div>
+                    <div>
+                      <p className="font-bold text-sm tracking-tight">{txn.product_name}</p>
+                      <p className="text-[10px] font-mono text-muted-foreground uppercase">{new Date(txn.created_at).toLocaleTimeString()}</p>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-4">
-                    <span className="font-mono font-bold text-lg">
-                      ${txn.amount.toFixed(2)}
-                    </span>
-                    <span className="text-sm text-muted-foreground">
-                      {txn.time}
-                    </span>
+                  <div className="text-right">
+                    <p className="font-mono font-black text-lg">₹{Number(txn.amount).toLocaleString()}</p>
+                    {txn.isNew && <Badge className="bg-emerald-500 text-white text-[9px] font-black italic h-4 border-0">NEW</Badge>}
                   </div>
                 </div>
-              ))}
-            </div>
-          </CardContent>
+              ))
+            )}
+          </div>
         </Card>
       </div>
     </DashboardLayout>

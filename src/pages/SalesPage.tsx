@@ -1,144 +1,117 @@
+import { useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { SalesTrendChart } from "@/components/dashboard/SalesTrendChart";
-import { CategoryPieChart } from "@/components/dashboard/CategoryPieChart";
-import { HourlySalesChart } from "@/components/dashboard/HourlySalesChart";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend } from "recharts";
-import { salesTrend } from "@/data/mockData";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from "recharts";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useSalesAnalytics } from "@/hooks/useSalesAnalytics";
+import { Loader2 } from "lucide-react";
 
 const SalesPage = () => {
-  // Create comparison data
-  const comparisonData = salesTrend.slice(0, 14).map((item, index) => ({
-    date: item.date,
-    thisWeek: item.revenue,
-    lastWeek: item.revenue * (0.85 + Math.random() * 0.2)
-  }));
+  const [range, setRange] = useState<'today' | '7d' | '30d'>('7d');
+  const { data, loading } = useSalesAnalytics(range);
 
   return (
-    <DashboardLayout 
-      title="Sales Analytics" 
-      subtitle="Deep dive into sales performance"
+    <DashboardLayout
+      title="Sales Analytics"
+      subtitle="Detailed breakdown of revenue, transactions, and trends"
     >
       <div className="space-y-6">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <SalesTrendChart />
-          <CategoryPieChart />
+        <div className="flex justify-between items-center">
+          <Tabs value={range} onValueChange={(v) => setRange(v as 'today' | '7d' | '30d')} className="w-[400px]">
+            <TabsList className="grid w-full grid-cols-3 border-2 border-foreground h-12">
+              <TabsTrigger value="today" className="font-bold uppercase text-xs data-[state=active]:bg-foreground data-[state=active]:text-background">Today</TabsTrigger>
+              <TabsTrigger value="7d" className="font-bold uppercase text-xs data-[state=active]:bg-foreground data-[state=active]:text-background">Last 7 Days</TabsTrigger>
+              <TabsTrigger value="30d" className="font-bold uppercase text-xs data-[state=active]:bg-foreground data-[state=active]:text-background">Last 30 Days</TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <HourlySalesChart />
-          
-          <Card className="border-2 border-foreground shadow-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg font-bold uppercase tracking-wide">
-                Week-over-Week Comparison
-              </CardTitle>
-              <p className="text-sm text-muted-foreground">This week vs last week</p>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={comparisonData.slice(0, 7)} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis 
-                      dataKey="date" 
-                      tick={{ fontSize: 12 }}
-                      tickLine={false}
-                      axisLine={{ stroke: "hsl(var(--border))" }}
-                    />
-                    <YAxis 
-                      tickFormatter={(value) => `$${(value / 1000).toFixed(0)}K`}
-                      tick={{ fontSize: 12 }}
-                      tickLine={false}
-                      axisLine={{ stroke: "hsl(var(--border))" }}
-                      width={60}
-                    />
-                    <Tooltip
-                      formatter={(value: number) => [`$${value.toLocaleString()}`, ""]}
-                      contentStyle={{
-                        backgroundColor: "hsl(var(--card))",
-                        border: "2px solid hsl(var(--foreground))",
-                        borderRadius: "0",
-                        fontWeight: 600
-                      }}
-                    />
-                    <Legend />
-                    <Bar dataKey="thisWeek" name="This Week" fill="hsl(var(--foreground))" />
-                    <Bar dataKey="lastWeek" name="Last Week" fill="hsl(var(--muted-foreground))" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        {loading ? (
+          <div className="h-[400px] flex items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin" />
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card className="border-2 border-foreground shadow-sm">
+                <CardHeader>
+                  <CardTitle className="text-lg font-bold uppercase tracking-wide">Revenue Trend</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-[300px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={data.revenueByDay}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.1)" />
+                        <XAxis dataKey="date" />
+                        <YAxis />
+                        <Tooltip />
+                        <Area type="monotone" dataKey="amount" stroke="#1a1a1a" fill="#1a1a1a1a" strokeWidth={2} />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
 
-        <Card className="border-2 border-foreground shadow-sm">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg font-bold uppercase tracking-wide">
-              Revenue & Transactions Trend
-            </CardTitle>
-            <p className="text-sm text-muted-foreground">Combined view of key metrics</p>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[350px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={salesTrend} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis 
-                    dataKey="date" 
-                    tick={{ fontSize: 12 }}
-                    tickLine={false}
-                    axisLine={{ stroke: "hsl(var(--border))" }}
-                    interval="preserveStartEnd"
-                  />
-                  <YAxis 
-                    yAxisId="left"
-                    tickFormatter={(value) => `$${(value / 1000).toFixed(0)}K`}
-                    tick={{ fontSize: 12 }}
-                    tickLine={false}
-                    axisLine={{ stroke: "hsl(var(--border))" }}
-                    width={60}
-                  />
-                  <YAxis 
-                    yAxisId="right"
-                    orientation="right"
-                    tick={{ fontSize: 12 }}
-                    tickLine={false}
-                    axisLine={{ stroke: "hsl(var(--border))" }}
-                    width={60}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "hsl(var(--card))",
-                      border: "2px solid hsl(var(--foreground))",
-                      borderRadius: "0",
-                      fontWeight: 600
-                    }}
-                  />
-                  <Legend />
-                  <Line
-                    yAxisId="left"
-                    type="monotone"
-                    dataKey="revenue"
-                    name="Revenue"
-                    stroke="hsl(var(--foreground))"
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                  <Line
-                    yAxisId="right"
-                    type="monotone"
-                    dataKey="transactions"
-                    name="Transactions"
-                    stroke="hsl(var(--chart-2))"
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+              <Card className="border-2 border-foreground shadow-sm">
+                <CardHeader>
+                  <CardTitle className="text-lg font-bold uppercase tracking-wide">Category Performance</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-[300px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={data.revenueByCategory} layout="vertical">
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.1)" />
+                        <XAxis type="number" />
+                        <YAxis dataKey="category" type="category" width={100} />
+                        <Tooltip />
+                        <Bar dataKey="amount" fill="#1d9e75" barSize={20} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
-          </CardContent>
-        </Card>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <Card className="lg:col-span-2 border-2 border-foreground shadow-sm">
+                <CardHeader>
+                  <CardTitle className="text-lg font-bold uppercase tracking-wide">Week over Week Comparison</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-[300px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={data.revenueByDay}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="date" />
+                        <YAxis />
+                        <Tooltip />
+                        <Bar dataKey="amount" fill="#185fa5" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-2 border-foreground shadow-sm">
+                <CardHeader>
+                  <CardTitle className="text-lg font-bold uppercase tracking-wide">Hourly Performance</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-[300px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={data.revenueByHour}>
+                        <XAxis dataKey="hour" fontSize={10} />
+                        <YAxis />
+                        <Tooltip />
+                        <Bar dataKey="amount" fill="#1d9e75" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </>
+        )}
       </div>
     </DashboardLayout>
   );

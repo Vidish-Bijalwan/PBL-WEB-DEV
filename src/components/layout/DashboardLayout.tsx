@@ -15,7 +15,7 @@ export function DashboardLayout({ children, title, subtitle }: DashboardLayoutPr
         <DashboardSidebar />
         <div className="flex-1 flex flex-col">
           <DashboardHeader title={title} subtitle={subtitle} />
-          <main className="flex-1 p-6 bg-secondary/30">
+          <main className="flex-1 p-6 bg-secondary/30 animate-fade-in">
             {children}
           </main>
         </div>
